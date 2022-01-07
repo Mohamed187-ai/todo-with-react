@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import TodoItem from './TodoItem';
 import styled from 'styled-components';
 import { ImUser } from 'react-icons/im';
@@ -7,13 +7,45 @@ import { BsPatchPlus } from 'react-icons/bs';
 const TodoList = ({ name, color, icon }) => {
     const [list, setList] = useState([]);
     const [todo, setTodo] = useState('');
-    const addBtnHandle = e => {
-        if(todo.length > 0){
-            setTodo(e.target.value);
+    const baseUrl = `https://api.airtable.com/v0/app617ZYI7FeJiC3p/${name}`;
+    const addBtnHandle = async () => {
+        // if(todo.length > 0){
+        //     setTodo(e.target.value);
+        //     setTodo('');
+        //     setList([ { id: list.length, title: todo, completed: false }, ...list]);
+        // }
+        try{
+            await fetch(baseUrl, {
+                method: 'POST',
+                headers: {
+                    Authorization: "Bearer keyE7FMy3igTvEPGE",
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ records: [{ fields: { title: todo, completed: false, }}] })
+            })
             setTodo('');
-            setList([ { id: list.length, title: todo, completed: false }, ...list]);
+        }catch(error){
+            console.log(error);
         }
     };
+    const getTodos = async () => {
+        try {
+            const todoData = await fetch(baseUrl,{
+                method: 'GET',
+                headers: {
+                    Authorization: "Bearer keyE7FMy3igTvEPGE",
+                }
+            });
+            const data = await todoData.json();
+            setList(data.records);
+        } catch (error) {
+            console.log(error);
+        }
+    };
+    console.log(list);
+    useEffect(() => {
+        getTodos();
+    } , [todo]);
     return (
         <Container>
             <TodoHeader>
@@ -24,7 +56,7 @@ const TodoList = ({ name, color, icon }) => {
             </TodoHeader>
             {
                 list.map((todo, index) => {
-                    return <TodoItem key={index} todo={todo} list={list} setList={setList} color={color} />
+                    return <TodoItem key={index} todo={todo} color={color} baseUrl={baseUrl} name={name} getTodos={getTodos}  />
                 })
             }
         </Container>
